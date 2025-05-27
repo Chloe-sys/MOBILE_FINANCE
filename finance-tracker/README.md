@@ -1,50 +1,166 @@
-# Welcome to your Expo app 👋
+# Finance Tracker Mobile Application
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern mobile application for tracking personal expenses and managing finances, built with React Native and Expo.
 
-## Get started
+## Features
 
-1. Install dependencies
+### Authentication
+- Secure login with username/password
+- Input validation for all fields
+- Error handling and user feedback
+- Session management with AsyncStorage
 
-   ```bash
-   npm install
-   ```
+### Dashboard
+- Welcome header with user information
+- Total expenses overview with statistics
+- Quick access to add new expenses
+- Search functionality for expenses
+- Category-based expense filtering
 
-2. Start the app
+### Expense Management
+- Add new expenses with details
+- View expense history
+- Search and filter expenses
+- Category-based organization
+- Amount tracking and calculations
 
-   ```bash
-   npx expo start
-   ```
+### User Profile
+- View user information
+- Display username and email
+- Secure logout functionality
+- Profile data management
 
-In the output, you'll find options to open the app in a
+## Technical Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **Frontend Framework**: React Native
+- **Navigation**: Expo Router
+- **State Management**: React Hooks
+- **Storage**: AsyncStorage
+- **UI Components**: 
+  - Expo Vector Icons
+  - Linear Gradient
+  - Custom styled components
+- **API Integration**: RESTful API endpoints
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+finance-tracker/
+├── app/
+│   ├── index.js              # Login screen
+│   ├── home.js              # Dashboard screen
+│   ├── add-expense.js       # Add expense screen
+│   ├── profile.js           # User profile screen
+│   └── expense-details.js   # Expense details screen
+├── src/
+│   ├── services/
+│   │   └── api.js          # API service functions
+│   └── components/         # Reusable components
+├── assets/
+│   └── images/            # Application images
+└── package.json
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## API Endpoints
 
-## Learn more
+### Authentication
+```
+POST /api/auth/login
+- Request: { username, password }
+- Response: { user: { id, username, token } }
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### User Data
+```
+GET /api/users/:id
+- Response: { user: { id, username, firstName, lastName } }
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Expenses
+```
+GET /api/expenses
+- Query params: { userId }
+- Response: { expenses: [{ id, name, amount, category, description, date }] }
 
-## Join the community
+POST /api/expenses
+- Request: { name, amount, category, description, date, userId }
+- Response: { expense: { id, name, amount, category, description, date } }
+```
 
-Join our community of developers creating universal apps.
+## Setup Instructions
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. **Prerequisites**
+   - Node.js (v14 or higher)
+   - npm or yarn
+   - Expo CLI
+
+2. **Installation**
+   ```bash
+   # Clone the repository
+   git clone [repository-url]
+
+   # Navigate to project directory
+   cd finance-tracker
+
+   # Install dependencies
+   npm install
+   # or
+   yarn install
+   ```
+
+3. **Environment Setup**
+   - Create a `.env` file in the root directory
+   - Add necessary environment variables:
+     ```
+     API_URL=your_api_url
+     ```
+
+4. **Running the Application**
+   ```bash
+   # Start the development server
+   npm start
+   # or
+   yarn start
+   ```
+
+## Features Implementation
+
+### Input Validation
+- Username validation (3-50 characters)
+- Password validation (minimum 6 characters)
+- Search query validation
+- Expense amount validation
+
+### UI Components
+- Custom styled cards
+- Gradient backgrounds
+- Responsive layouts
+- Loading indicators
+- Error messages
+- Navigation bar
+
+### Data Management
+- AsyncStorage for user data
+- API integration for expenses
+- Real-time updates
+- Error handling
+
+## Security Features
+
+- Input sanitization
+- Secure password handling
+- Token-based authentication
+- Error message security
+
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

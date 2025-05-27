@@ -2,88 +2,161 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
   ActivityIndicator,
+  Alert,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { userService } from '../src/services/api';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    username: '',
+    password: '',
+  });
+
+  const validateInputs = () => {
+    let isValid = true;
+    const newErrors = {
+      username: '',
+      password: '',
+    };
+
+    // Username validation
+    if (!username.trim()) {
+      newErrors.username = 'Username is required';
+      isValid = false;
+    } else if (username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+      isValid = false;
+    } else if (username.length > 50) {
+      newErrors.username = 'Username must be less than 50 characters';
+      isValid = false;
+    } else if (!/^[a-zA-Z0-9@._-]+$/.test(username)) {
+      newErrors.username = 'Username contains invalid characters';
+      isValid = false;
+    }
+
+    // Password validation
+    if (!password) {
+      newErrors.password = 'Password is required';
+      isValid = false;
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+      isValid = false;
+    } else if (password.length > 50) {
+      newErrors.password = 'Password must be less than 50 characters';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Error', 'Please enter both username and password');
+    if (!validateInputs()) {
       return;
     }
 
     setLoading(true);
     try {
-      const user = await userService.login(username);
-      if (user) {
-        router.replace('/home');
-      } else {
-        Alert.alert('Error', 'Invalid credentials');
-      }
+      const user = await userService.login(username.trim(), password);
+      // Store user data in AsyncStorage
+      await AsyncStorage.setItem('userData', JSON.stringify(user));
+      // Store user data globally
+      global.user = user;
+      router.replace('/home');
     } catch (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert(
+        'Login Failed',
+        error.message || 'Please check your credentials and try again'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ImageBackground
-      source={require('../assets/images/background.jpg')}
-      style={styles.background}
-    >
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+      <ImageBackground
+        source={require('../assets/images/background.jpg')}
+        style={styles.background}
       >
-        <View style={styles.overlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.content}
+        >
           <View style={styles.logoContainer}>
-            <Ionicons name="wallet" size={60} color="#6C63FF" />
-            <Text style={styles.title}>Finance Tracker</Text>
-            <Text style={styles.subtitle}>Welcome back!</Text>
+            <View style={styles.logoCircle}>
+              <Ionicons name="wallet" size={40} color="#fff" />
+            </View>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>Sign in to continue</Text>
           </View>
 
-          <View style={styles.formContainer}>
+          <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color="#6C63FF" />
+              <Ionicons 
+                name="mail-outline" 
+                size={20} 
+                color={errors.username ? '#FF3B30' : '#666'} 
+                style={styles.inputIcon} 
+              />
               <TextInput
-                style={styles.input}
+                style={[styles.input, errors.username ? styles.inputError : null]}
                 placeholder="Username"
-                placeholderTextColor="#666"
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(text) => {
+                  setUsername(text);
+                  setErrors(prev => ({ ...prev, username: '' }));
+                }}
                 autoCapitalize="none"
+                keyboardType="email-address"
+                maxLength={50}
+                placeholderTextColor="#999"
               />
             </View>
+            {errors.username ? (
+              <Text style={styles.errorText}>{errors.username}</Text>
+            ) : null}
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#6C63FF" />
+              <Ionicons 
+                name="lock-closed-outline" 
+                size={20} 
+                color={errors.password ? '#FF3B30' : '#666'} 
+                style={styles.inputIcon} 
+              />
               <TextInput
-                style={styles.input}
+                style={[styles.input, errors.password ? styles.inputError : null]}
                 placeholder="Password"
-                placeholderTextColor="#666"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors(prev => ({ ...prev, password: '' }));
+                }}
                 secureTextEntry
+                maxLength={50}
+                placeholderTextColor="#999"
               />
             </View>
+            {errors.password ? (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            ) : null}
 
             <TouchableOpacity
               style={[styles.loginButton, loading && styles.loginButtonDisabled]}
@@ -93,113 +166,128 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <>
-                  <Text style={styles.loginButtonText}>Login</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#fff" />
-                </>
+                <Text style={styles.loginButtonText}>Sign In</Text>
               )}
             </TouchableOpacity>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </ImageBackground>
+        </KeyboardAvoidingView>
+      </ImageBackground>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   background: {
     flex: 1,
     width: '100%',
     height: '100%',
   },
-  container: {
+  content: {
     flex: 1,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 20,
     justifyContent: 'center',
+    padding: 20,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
   },
+  logoCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 20,
+    marginBottom: 8,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#fff',
-    marginTop: 10,
     opacity: 0.8,
   },
-  formContainer: {
+  form: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 20,
     padding: 20,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginBottom: 15,
-    paddingHorizontal: 15,
-    height: 50,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    marginLeft: 10,
+    height: 50,
     fontSize: 16,
     color: '#333',
+    paddingHorizontal: 12,
   },
   loginButton: {
     backgroundColor: '#6C63FF',
     borderRadius: 12,
     height: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    alignItems: 'center',
+    marginTop: 16,
     shadowColor: '#6C63FF',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    shadowRadius: 4,
+    elevation: 4,
   },
   loginButtonDisabled: {
-    backgroundColor: '#9E99FF',
+    opacity: 0.7,
   },
   loginButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginRight: 10,
+  },
+  signupLink: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  signupText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  signupTextBold: {
+    color: '#6C63FF',
+    fontWeight: 'bold',
+  },
+  inputError: {
+    borderColor: '#FF3B30',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+    marginBottom: 8,
   },
 }); 

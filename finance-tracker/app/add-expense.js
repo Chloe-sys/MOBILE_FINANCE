@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,13 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { expenseService } from '../src/services/api';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function ExpenseDetailsScreen() {
+export default function AddExpenseScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [expense, setExpense] = useState({
     name: '',
@@ -30,24 +28,6 @@ export default function ExpenseDetailsScreen() {
     date: new Date().toISOString().split('T')[0],
   });
 
-  useEffect(() => {
-    fetchExpenseDetails();
-  }, [id]);
-
-  const fetchExpenseDetails = async () => {
-    try {
-      const data = await expenseService.getExpenseById(id);
-      setExpense({
-        ...data,
-        date: new Date(data.createdAt).toISOString().split('T')[0],
-      });
-    } catch (error) {
-      Alert.alert('Error', 'Failed to fetch expense details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSave = async () => {
     if (!expense.name || !expense.amount || !expense.category) {
       Alert.alert('Error', 'Please fill in all required fields');
@@ -56,46 +36,16 @@ export default function ExpenseDetailsScreen() {
 
     setSaving(true);
     try {
-      await expenseService.updateExpense(id, expense);
-      Alert.alert('Success', 'Expense updated successfully', [
+      await expenseService.createExpense(expense);
+      Alert.alert('Success', 'Expense added successfully', [
         { text: 'OK', onPress: () => router.replace('/home') }
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update expense');
+      Alert.alert('Error', 'Failed to add expense');
     } finally {
       setSaving(false);
     }
   };
-
-  const handleDelete = async () => {
-    Alert.alert(
-      'Delete Expense',
-      'Are you sure you want to delete this expense?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await expenseService.deleteExpense(id);
-              router.replace('/home');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to delete expense');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2E3192" />
-      </View>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -107,13 +57,8 @@ export default function ExpenseDetailsScreen() {
         >
           <Ionicons name="arrow-back" size={24} color="#2E3192" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Expense</Text>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={handleDelete}
-        >
-          <Ionicons name="trash-outline" size={24} color="#FF3B30" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Add New Expense</Text>
+        <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -188,7 +133,7 @@ export default function ExpenseDetailsScreen() {
           {saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+            <Text style={styles.saveButtonText}>Add Expense</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -230,13 +175,8 @@ const styles = StyleSheet.create({
     color: '#2E3192',
     letterSpacing: 0.5,
   },
-  deleteButton: {
+  placeholder: {
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF1F0',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   content: {
     flex: 1,
@@ -297,11 +237,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: 0.5,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FE',
   },
 }); 

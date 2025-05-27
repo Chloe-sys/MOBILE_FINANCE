@@ -6,19 +6,31 @@ const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
 });
 
 export const userService = {
-  login: async (username) => {
+  login: async (username, password) => {
     try {
-      const response = await api.get(`/users?username=${username}`);
-      if (response.data.length === 0) {
+      const response = await api.get(`/users?username=${encodeURIComponent(username)}`);
+      const user = response.data[0];
+      
+      if (!user) {
         throw new Error('User not found');
       }
-      return response.data[0];
+      
+      if (user.password !== password) {
+        throw new Error('Invalid password');
+      }
+      
+      return user;
     } catch (error) {
-      throw new Error('Failed to login. Please try again.');
+      console.error('Login error:', error);
+      if (error.message === 'User not found' || error.message === 'Invalid password') {
+        throw error;
+      }
+      throw new Error('Login failed. Please try again.');
     }
   },
 };
@@ -29,7 +41,7 @@ export const expenseService = {
       const response = await api.get('/expenses');
       return response.data;
     } catch (error) {
-      throw new Error('Failed to fetch expenses');
+      throw new Error(error.response?.data?.message || 'Failed to fetch expenses');
     }
   },
 
@@ -38,33 +50,31 @@ export const expenseService = {
       const response = await api.get(`/expenses/${id}`);
       return response.data;
     } catch (error) {
-      throw new Error('Failed to fetch expense details');
+      throw new Error(error.response?.data?.message || 'Failed to fetch expense');
     }
   },
 
-  createExpense: async (expenseData) => {
+  createExpense: async (expense) => {
     try {
       const response = await api.post('/expenses', {
-        name: expenseData.name,
-        amount: expenseData.amount,
-        description: expenseData.description,
+        ...expense,
+        createdAt: new Date().toISOString(),
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to create expense');
+      throw new Error(error.response?.data?.message || 'Failed to create expense');
     }
   },
 
-  updateExpense: async (id, expenseData) => {
+  updateExpense: async (id, expense) => {
     try {
       const response = await api.put(`/expenses/${id}`, {
-        name: expenseData.name,
-        amount: expenseData.amount,
-        description: expenseData.description,
+        ...expense,
+        updatedAt: new Date().toISOString(),
       });
       return response.data;
     } catch (error) {
-      throw new Error('Failed to update expense');
+      throw new Error(error.response?.data?.message || 'Failed to update expense');
     }
   },
 
@@ -73,7 +83,7 @@ export const expenseService = {
       await api.delete(`/expenses/${id}`);
       return true;
     } catch (error) {
-      throw new Error('Failed to delete expense');
+      throw new Error(error.response?.data?.message || 'Failed to delete expense');
     }
   },
 
